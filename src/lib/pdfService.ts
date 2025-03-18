@@ -1,13 +1,7 @@
 
 import { PatientFormData } from "@/types";
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
-
-declare module "jspdf" {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
+import autoTable from "jspdf-autotable";
 
 export const generatePDF = (formData: PatientFormData, medications: any[]): void => {
   const { patientInfo, vitals, medications: patientMeds } = formData;
@@ -54,7 +48,7 @@ export const generatePDF = (formData: PatientFormData, medications: any[]): void
   });
   
   // Generate medication table
-  doc.autoTable({
+  autoTable(doc, {
     startY: 135,
     head: [['Medication', 'Dosage', 'Frequency', 'Notes']],
     body: medicationData,

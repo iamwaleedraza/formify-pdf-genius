@@ -127,7 +127,7 @@ const PatientForm = () => {
     }
   };
 
-  const handleInputChange = (section: keyof PatientFormData, field: string, value: string) => {
+  const handleInputChange = (section: keyof PatientFormData | "", field: string, value: string) => {
     if (!formData) return;
     
     setFormData(prev => {
@@ -205,7 +205,6 @@ const PatientForm = () => {
     });
   };
 
-  // Determine which sections user can edit based on role
   const canEditNurseSection = currentUser?.role === "nurse" && 
     (patient?.status === "nurse-pending" || patient?.status === "completed");
   
@@ -542,7 +541,7 @@ const PatientForm = () => {
                     <Textarea 
                       id="exerciseRecommendations"
                       value={formData.exerciseRecommendations}
-                      onChange={(e) => handleInputChange("", "exerciseRecommendations", e.target.value)}
+                      onChange={(e) => handleInputChange("" as keyof PatientFormData, "exerciseRecommendations", e.target.value)}
                       disabled={!canEditNurseSection}
                       className="min-h-[100px]"
                     />
@@ -556,7 +555,7 @@ const PatientForm = () => {
                     <Textarea 
                       id="nurseNotes"
                       value={formData.nurseNotes}
-                      onChange={(e) => handleInputChange("", "nurseNotes", e.target.value)}
+                      onChange={(e) => handleInputChange("" as keyof PatientFormData, "nurseNotes", e.target.value)}
                       disabled={!canEditNurseSection}
                       className="min-h-[100px]"
                     />
@@ -570,7 +569,7 @@ const PatientForm = () => {
                     <Textarea 
                       id="doctorNotes"
                       value={formData.doctorNotes}
-                      onChange={(e) => handleInputChange("", "doctorNotes", e.target.value)}
+                      onChange={(e) => handleInputChange("" as keyof PatientFormData, "doctorNotes", e.target.value)}
                       disabled={!canEditDoctorSection}
                       className="min-h-[100px]"
                     />
@@ -584,7 +583,7 @@ const PatientForm = () => {
                     <Textarea 
                       id="diagnosis"
                       value={formData.diagnosis}
-                      onChange={(e) => handleInputChange("", "diagnosis", e.target.value)}
+                      onChange={(e) => handleInputChange("" as keyof PatientFormData, "diagnosis", e.target.value)}
                       disabled={!canEditDoctorSection}
                       className="min-h-[100px]"
                     />
@@ -598,7 +597,7 @@ const PatientForm = () => {
                     <Textarea 
                       id="treatmentPlan"
                       value={formData.treatmentPlan}
-                      onChange={(e) => handleInputChange("", "treatmentPlan", e.target.value)}
+                      onChange={(e) => handleInputChange("" as keyof PatientFormData, "treatmentPlan", e.target.value)}
                       disabled={!canEditDoctorSection}
                       className="min-h-[100px]"
                     />

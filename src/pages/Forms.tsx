@@ -5,12 +5,39 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Upload, FileUp, FileDown, FilePlus2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import FormBuilder from "@/components/FormBuilder";
+import { FormTemplate } from "@/types";
 
 const Forms = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [templates, setTemplates] = useState<FormTemplate[]>([
+    {
+      id: "template-1",
+      name: "General Medical Exam",
+      description: "Standard template for general medical examinations",
+      fields: [
+        { id: "f1", type: "text", label: "Chief Complaint", required: true, section: "patient" },
+        { id: "f2", type: "textarea", label: "Medical History", required: false, section: "patient" },
+        { id: "f3", type: "number", label: "Temperature", required: true, section: "vitals" },
+        { id: "f4", type: "medication", label: "Prescribed Medications", required: false, section: "medications" }
+      ]
+    },
+    {
+      id: "template-2",
+      name: "Specialist Referral",
+      description: "Template for specialist referrals and consultations",
+      fields: [
+        { id: "f5", type: "text", label: "Referral Reason", required: true, section: "doctor" },
+        { id: "f6", type: "select", label: "Specialist Type", required: true, section: "doctor", options: ["Cardiology", "Neurology", "Orthopedics"] },
+        { id: "f7", type: "textarea", label: "Medical History", required: false, section: "patient" }
+      ]
+    }
+  ]);
+  
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +81,10 @@ const Forms = () => {
     }, 2000);
   };
 
+  const handleSaveTemplate = (newTemplate: FormTemplate) => {
+    setTemplates([newTemplate, ...templates]);
+  };
+
   return (
     <Layout>
       <div className="animate-fade-in">
@@ -64,14 +95,57 @@ const Forms = () => {
               Manage and customize your form templates
             </p>
           </div>
-          <Button className="flex items-center gap-2">
-            <FilePlus2 size={16} />
-            <span>Create New Template</span>
-          </Button>
         </div>
 
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-          <div className="lg:col-span-2 animate-fade-in-up">
+        <Tabs defaultValue="templates">
+          <TabsList className="mb-6">
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsTrigger value="upload">Upload Template</TabsTrigger>
+            <TabsTrigger value="create">Create Template</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="templates" className="animate-fade-in-up">
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {templates.map((template) => (
+                <Card key={template.id} className="animate-fade-in-up">
+                  <CardHeader>
+                    <CardTitle>{template.name}</CardTitle>
+                    <CardDescription>
+                      {template.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-center h-40 bg-muted/30 rounded-md">
+                      <FileText className="h-16 w-16 text-muted-foreground" />
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-sm text-muted-foreground">
+                        {template.fields.length} fields
+                      </p>
+                      <div className="flex flex-wrap mt-2 gap-2">
+                        {Array.from(new Set(template.fields.map(field => field.section))).map(section => (
+                          <div key={section} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                            {section.charAt(0).toUpperCase() + section.slice(1)} Section
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline">
+                      <FileDown className="mr-2 h-4 w-4" />
+                      Download
+                    </Button>
+                    <Button>
+                      Use Template
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="upload" className="animate-fade-in-up">
             <Card>
               <CardHeader>
                 <CardTitle>Upload Template</CardTitle>
@@ -126,90 +200,12 @@ const Forms = () => {
                 </Button>
               </CardFooter>
             </Card>
-          </div>
-
-          {/* Sample Templates */}
-          <Card className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-            <CardHeader>
-              <CardTitle>General Medical Exam</CardTitle>
-              <CardDescription>
-                Standard template for general medical examinations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center h-40 bg-muted/30 rounded-md">
-                <FileText className="h-16 w-16 text-muted-foreground" />
-              </div>
-              <div className="mt-4">
-                <p className="text-sm text-muted-foreground">
-                  Last updated: August 15, 2023
-                </p>
-                <div className="flex flex-wrap mt-2 gap-2">
-                  <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                    Nurse Section
-                  </div>
-                  <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                    Doctor Section
-                  </div>
-                  <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                    Medications
-                  </div>
-                  <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                    Vitals
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline">
-                <FileDown className="mr-2 h-4 w-4" />
-                Download
-              </Button>
-              <Button>
-                Use Template
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card className="animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-            <CardHeader>
-              <CardTitle>Specialist Referral</CardTitle>
-              <CardDescription>
-                Template for specialist referrals and consultations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center h-40 bg-muted/30 rounded-md">
-                <FileText className="h-16 w-16 text-muted-foreground" />
-              </div>
-              <div className="mt-4">
-                <p className="text-sm text-muted-foreground">
-                  Last updated: September 3, 2023
-                </p>
-                <div className="flex flex-wrap mt-2 gap-2">
-                  <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                    Referral Reason
-                  </div>
-                  <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                    Medical History
-                  </div>
-                  <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                    Specialist Details
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline">
-                <FileDown className="mr-2 h-4 w-4" />
-                Download
-              </Button>
-              <Button>
-                Use Template
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="create" className="animate-fade-in-up">
+            <FormBuilder onSave={handleSaveTemplate} />
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );

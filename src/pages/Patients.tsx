@@ -4,9 +4,9 @@ import Layout from "@/components/Layout";
 import { getPatients } from "@/lib/mockData";
 import { Patient } from "@/types";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Plus, UserPlus } from "lucide-react";
+import { Search } from "lucide-react";
 import PatientCard from "@/components/PatientCard";
+import AddPatientDialog from "@/components/AddPatientDialog";
 
 const Patients = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -28,6 +28,10 @@ const Patients = () => {
     fetchPatients();
   }, []);
 
+  const handleAddPatient = (newPatient: Patient) => {
+    setPatients(prev => [newPatient, ...prev]);
+  };
+
   // Filter patients based on search query
   const filteredPatients = searchQuery 
     ? patients.filter(patient => 
@@ -46,10 +50,7 @@ const Patients = () => {
               View and manage patient forms
             </p>
           </div>
-          <Button className="flex items-center gap-2">
-            <UserPlus size={16} />
-            <span>Add New Patient</span>
-          </Button>
+          <AddPatientDialog onAddPatient={handleAddPatient} />
         </div>
 
         {/* Search */}

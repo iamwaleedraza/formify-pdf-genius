@@ -10,7 +10,7 @@ import PatientForm from "./pages/PatientForm";
 import Forms from "./pages/Forms";
 import NotFound from "./pages/NotFound";
 
-// Add jsPDF
+// Add jsPDF with autoTable
 import "jspdf-autotable";
 
 const queryClient = new QueryClient();
