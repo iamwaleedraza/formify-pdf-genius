@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -414,7 +413,7 @@ const PatientForm = () => {
                       value={formData.vitals.height}
                       onChange={(e) => handleInputChange("vitals", "height", e.target.value)}
                       disabled={!canEditNurseSection}
-                      placeholder="e.g. 5'10\""
+                      placeholder="e.g. 5'10&quot;"
                     />
                   </div>
                   <div className="space-y-2">
