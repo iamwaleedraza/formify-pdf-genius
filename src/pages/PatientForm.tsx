@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -36,6 +37,19 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { generatePDF } from "@/lib/pdfService";
 
+// Initialize empty SummaryFinding object
+const emptySummaryFinding = {
+  glucoseMetabolism: '',
+  lipidProfile: '',
+  inflammation: '',
+  uricAcid: '',
+  vitamins: '',
+  minerals: '',
+  sexHormones: '',
+  renalLiverFunction: '',
+  cancerMarkers: ''
+};
+
 const PatientForm = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -63,6 +77,11 @@ const PatientForm = () => {
         if (!patientData) {
           navigate("/patients");
           return;
+        }
+        
+        // Add summaryFindings if it doesn't exist
+        if (formDataResult && !formDataResult.summaryFindings) {
+          formDataResult.summaryFindings = emptySummaryFinding;
         }
         
         setPatient(patientData);
@@ -133,7 +152,7 @@ const PatientForm = () => {
     setFormData(prev => {
       if (!prev) return prev;
       
-      if (section === "patientInfo" || section === "vitals") {
+      if (section === "patientInfo" || section === "vitals" || section === "summaryFindings") {
         return {
           ...prev,
           [section]: {
@@ -210,6 +229,48 @@ const PatientForm = () => {
   
   const canEditDoctorSection = currentUser?.role === "doctor" && 
     (patient?.status === "doctor-pending" || patient?.status === "completed");
+
+  // Helper function to calculate BMI
+  const calculateBMI = (height: string, weight: string): string => {
+    if (!height || !weight) return '-';
+    
+    // Handle height in different formats
+    let heightInMeters = 0;
+    if (height.includes("'")) {
+      // Format like 5'10"
+      const parts = height.replace(/"/g, '').split("'");
+      const feet = parseFloat(parts[0]);
+      const inches = parseFloat(parts[1] || '0');
+      heightInMeters = ((feet * 12) + inches) * 0.0254;
+    } else {
+      // Assume height is in cm
+      heightInMeters = parseFloat(height) / 100;
+    }
+    
+    // Convert weight to kg if it's in lbs
+    let weightInKg = parseFloat(weight);
+    if (height.includes('lbs')) {
+      weightInKg = weightInKg * 0.45359237;
+    }
+    
+    if (isNaN(heightInMeters) || isNaN(weightInKg) || heightInMeters === 0) return '-';
+    
+    const bmi = weightInKg / (heightInMeters * heightInMeters);
+    return bmi.toFixed(1);
+  };
+
+  // Calculate age from date of birth
+  const calculateAge = (dateOfBirth: string): string => {
+    if (!dateOfBirth) return '-';
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age.toString();
+  };
 
   if (isLoading) {
     return (
@@ -345,6 +406,7 @@ const PatientForm = () => {
         <Tabs defaultValue="vitals" className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
           <TabsList className="mb-6">
             <TabsTrigger value="vitals">Vitals</TabsTrigger>
+            <TabsTrigger value="summaryFindings">Summary Findings</TabsTrigger>
             <TabsTrigger value="medications">Medications</TabsTrigger>
             <TabsTrigger value="notes">Notes & Recommendations</TabsTrigger>
           </TabsList>
@@ -352,23 +414,87 @@ const PatientForm = () => {
           <TabsContent value="vitals" className="mt-0">
             <Card>
               <CardHeader>
-                <CardTitle>Vital Signs</CardTitle>
+                <CardTitle>Key Vital Signs</CardTitle>
                 <CardDescription>
                   Record patient's vital signs and measurements
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="bloodPressure">Blood Pressure (mmHg)</Label>
-                    <Input 
-                      id="bloodPressure"
-                      value={formData.vitals.bloodPressure}
-                      onChange={(e) => handleInputChange("vitals", "bloodPressure", e.target.value)}
-                      disabled={!canEditNurseSection}
-                      placeholder="e.g. 120/80"
-                    />
-                  </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-primary text-white">
+                        <th className="text-left px-4 py-2 border">Vitals</th>
+                        <th className="text-left px-4 py-2 border">Value</th>
+                        <th className="text-left px-4 py-2 border">Target Range</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Date of Birth</td>
+                        <td className="px-4 py-2 border">
+                          <Input 
+                            type="date"
+                            value={formData.patientInfo.dateOfBirth}
+                            onChange={(e) => handleInputChange("patientInfo", "dateOfBirth", e.target.value)}
+                            disabled={!canEditNurseSection}
+                            className="border-0 p-0 h-auto"
+                          />
+                        </td>
+                        <td className="px-4 py-2 border">-</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Age (years)</td>
+                        <td className="px-4 py-2 border">{calculateAge(formData.patientInfo.dateOfBirth)}</td>
+                        <td className="px-4 py-2 border">-</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Blood Pressure (mmHg)</td>
+                        <td className="px-4 py-2 border">
+                          <Input 
+                            value={formData.vitals.bloodPressure}
+                            onChange={(e) => handleInputChange("vitals", "bloodPressure", e.target.value)}
+                            disabled={!canEditNurseSection}
+                            placeholder="e.g. 120/80"
+                            className="border-0 p-0 h-auto"
+                          />
+                        </td>
+                        <td className="px-4 py-2 border">120/60-140/85</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Height (cm)</td>
+                        <td className="px-4 py-2 border">
+                          <Input 
+                            value={formData.vitals.height}
+                            onChange={(e) => handleInputChange("vitals", "height", e.target.value)}
+                            disabled={!canEditNurseSection}
+                            className="border-0 p-0 h-auto"
+                          />
+                        </td>
+                        <td className="px-4 py-2 border">-</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Weight (Kg)</td>
+                        <td className="px-4 py-2 border">
+                          <Input 
+                            value={formData.vitals.weight}
+                            onChange={(e) => handleInputChange("vitals", "weight", e.target.value)}
+                            disabled={!canEditNurseSection}
+                            className="border-0 p-0 h-auto"
+                          />
+                        </td>
+                        <td className="px-4 py-2 border">-</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Body Mass Index</td>
+                        <td className="px-4 py-2 border">{calculateBMI(formData.vitals.height, formData.vitals.weight)}</td>
+                        <td className="px-4 py-2 border">18.5 – 25.9</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
                   <div className="space-y-2">
                     <Label htmlFor="heartRate">Heart Rate (bpm)</Label>
                     <Input 
@@ -405,25 +531,131 @@ const PatientForm = () => {
                       disabled={!canEditNurseSection}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="height">Height</Label>
-                    <Input 
-                      id="height"
-                      value={formData.vitals.height}
-                      onChange={(e) => handleInputChange("vitals", "height", e.target.value)}
-                      disabled={!canEditNurseSection}
-                      placeholder="e.g. 5'10&quot;"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="weight">Weight (lbs)</Label>
-                    <Input 
-                      id="weight"
-                      value={formData.vitals.weight}
-                      onChange={(e) => handleInputChange("vitals", "weight", e.target.value)}
-                      disabled={!canEditNurseSection}
-                    />
-                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="summaryFindings" className="mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Summary of Findings</CardTitle>
+                <CardDescription>
+                  Record patient's health parameters and findings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-primary text-white">
+                        <th className="text-left px-4 py-2 border">Parameters</th>
+                        <th className="text-left px-4 py-2 border">Key findings and next steps</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50 w-1/4">Glucose Metabolism</td>
+                        <td className="px-4 py-2 border">
+                          <Textarea 
+                            value={formData.summaryFindings?.glucoseMetabolism || ''}
+                            onChange={(e) => handleInputChange("summaryFindings", "glucoseMetabolism", e.target.value)}
+                            disabled={!canEditDoctorSection}
+                            className="border-0 p-0 min-h-[60px]"
+                            placeholder="What's good – what's not so good and next steps"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Lipid Profile</td>
+                        <td className="px-4 py-2 border">
+                          <Textarea 
+                            value={formData.summaryFindings?.lipidProfile || ''}
+                            onChange={(e) => handleInputChange("summaryFindings", "lipidProfile", e.target.value)}
+                            disabled={!canEditDoctorSection}
+                            className="border-0 p-0 min-h-[60px]"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Inflammation</td>
+                        <td className="px-4 py-2 border">
+                          <Textarea 
+                            value={formData.summaryFindings?.inflammation || ''}
+                            onChange={(e) => handleInputChange("summaryFindings", "inflammation", e.target.value)}
+                            disabled={!canEditDoctorSection}
+                            className="border-0 p-0 min-h-[60px]"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Uric Acid</td>
+                        <td className="px-4 py-2 border">
+                          <Textarea 
+                            value={formData.summaryFindings?.uricAcid || ''}
+                            onChange={(e) => handleInputChange("summaryFindings", "uricAcid", e.target.value)}
+                            disabled={!canEditDoctorSection}
+                            className="border-0 p-0 min-h-[60px]"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Vitamins</td>
+                        <td className="px-4 py-2 border">
+                          <Textarea 
+                            value={formData.summaryFindings?.vitamins || ''}
+                            onChange={(e) => handleInputChange("summaryFindings", "vitamins", e.target.value)}
+                            disabled={!canEditDoctorSection}
+                            className="border-0 p-0 min-h-[60px]"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Minerals</td>
+                        <td className="px-4 py-2 border">
+                          <Textarea 
+                            value={formData.summaryFindings?.minerals || ''}
+                            onChange={(e) => handleInputChange("summaryFindings", "minerals", e.target.value)}
+                            disabled={!canEditDoctorSection}
+                            className="border-0 p-0 min-h-[60px]"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Sex Hormones</td>
+                        <td className="px-4 py-2 border">
+                          <Textarea 
+                            value={formData.summaryFindings?.sexHormones || ''}
+                            onChange={(e) => handleInputChange("summaryFindings", "sexHormones", e.target.value)}
+                            disabled={!canEditDoctorSection}
+                            className="border-0 p-0 min-h-[60px]"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Renal & Liver Function</td>
+                        <td className="px-4 py-2 border">
+                          <Textarea 
+                            value={formData.summaryFindings?.renalLiverFunction || ''}
+                            onChange={(e) => handleInputChange("summaryFindings", "renalLiverFunction", e.target.value)}
+                            disabled={!canEditDoctorSection}
+                            className="border-0 p-0 min-h-[60px]"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 border bg-gray-50">Cancer Markers</td>
+                        <td className="px-4 py-2 border">
+                          <Textarea 
+                            value={formData.summaryFindings?.cancerMarkers || ''}
+                            onChange={(e) => handleInputChange("summaryFindings", "cancerMarkers", e.target.value)}
+                            disabled={!canEditDoctorSection}
+                            className="border-0 p-0 min-h-[60px]"
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </CardContent>
             </Card>

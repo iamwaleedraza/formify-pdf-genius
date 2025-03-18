@@ -27,6 +27,18 @@ export interface Vital {
   weight: string;
 }
 
+export interface SummaryFinding {
+  glucoseMetabolism: string;
+  lipidProfile: string;
+  inflammation: string;
+  uricAcid: string;
+  vitamins: string;
+  minerals: string;
+  sexHormones: string;
+  renalLiverFunction: string;
+  cancerMarkers: string;
+}
+
 export interface PatientFormData {
   patientInfo: {
     name: string;
@@ -35,6 +47,7 @@ export interface PatientFormData {
     medicalRecordNumber: string;
   };
   vitals: Vital;
+  summaryFindings: SummaryFinding;
   medications: {
     id: string;
     medicationId: string;
@@ -70,5 +83,5 @@ export type FormField = {
   placeholder?: string;
   required: boolean;
   options?: string[];
-  section: 'patient' | 'vitals' | 'medications' | 'nurse' | 'doctor';
+  section: 'patient' | 'vitals' | 'medications' | 'nurse' | 'doctor' | 'summaryFindings';
 };

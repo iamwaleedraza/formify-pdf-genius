@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LucideHome, Users, FileText, LogOut, Menu, X } from "lucide-react";
+import { LucideHome, Users, LogOut, Menu, X } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getCurrentUser } from "@/lib/mockData";
 import { User } from "@/types";
@@ -48,12 +48,8 @@ const Layout = ({ children }: LayoutProps) => {
       label: "Patients",
       href: "/patients",
       icon: Users
-    },
-    {
-      label: "Forms",
-      href: "/forms",
-      icon: FileText,
     }
+    // Forms section removed as requested
   ];
 
   return (
@@ -78,10 +74,8 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="flex flex-col h-full">
           {/* Logo and app name */}
           <div className="flex items-center h-16 px-6 border-b border-border">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mr-3">
-              <FileText size={16} className="text-white" />
-            </div>
-            <span className="text-lg font-semibold">MediForm</span>
+            <img src="/assets/dna-logo.svg" alt="DNA Health" className="h-10 mr-2" />
+            <span className="text-lg font-semibold text-brand-text">DNA Health</span>
           </div>
 
           {/* Navigation */}
@@ -94,14 +88,14 @@ const Layout = ({ children }: LayoutProps) => {
                   "flex items-center px-4 py-3 text-sm rounded-lg transition-colors",
                   location.pathname === item.href
                     ? "bg-primary/10 text-primary"
-                    : "text-foreground/70 hover:bg-accent hover:text-foreground"
+                    : "text-brand-text hover:bg-accent hover:text-foreground"
                 )}
               >
                 <item.icon 
                   size={18} 
                   className={cn(
                     "mr-3",
-                    location.pathname === item.href ? "text-primary" : "text-foreground/70"
+                    location.pathname === item.href ? "text-primary" : "text-brand-text/70"
                   )} 
                 />
                 {item.label}
@@ -116,12 +110,12 @@ const Layout = ({ children }: LayoutProps) => {
                 {currentUser?.name.charAt(0)}
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium">{currentUser?.name}</p>
+                <p className="text-sm font-medium text-brand-text">{currentUser?.name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{currentUser?.role}</p>
               </div>
             </div>
-            <button className="flex items-center w-full px-4 py-2 text-sm text-left rounded-lg text-foreground/70 hover:bg-accent hover:text-foreground transition-colors">
-              <LogOut size={18} className="mr-3 text-foreground/70" />
+            <button className="flex items-center w-full px-4 py-2 text-sm text-left rounded-lg text-brand-text/70 hover:bg-accent hover:text-foreground transition-colors">
+              <LogOut size={18} className="mr-3 text-brand-text/70" />
               Sign out
             </button>
           </div>
