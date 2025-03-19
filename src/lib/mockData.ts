@@ -6,53 +6,61 @@ export const mockMedications: Medication[] = [
     name: "Amoxicillin",
     dosage: "500mg",
     frequency: "3 times daily",
-    notes: "Take with food"
+    notes: "Take with food",
+    type: "medication"
   },
   {
     id: "med2",
     name: "Lisinopril",
     dosage: "10mg",
     frequency: "Once daily",
-    notes: "Take in the morning"
+    notes: "Take in the morning",
+    type: "medication"
   },
   {
     id: "med3",
     name: "Metformin",
     dosage: "1000mg",
     frequency: "Twice daily",
-    notes: "Take with meals"
+    notes: "Take with meals",
+    type: "medication"
   },
   {
     id: "med4",
     name: "Atorvastatin",
     dosage: "20mg",
-    frequency: "Once daily at bedtime"
+    frequency: "Once daily at bedtime",
+    type: "medication"
   },
   {
     id: "med5",
     name: "Albuterol",
     dosage: "2 puffs",
-    frequency: "Every 4-6 hours as needed"
+    frequency: "Every 4-6 hours as needed",
+    type: "medication"
   },
   {
     id: "med6",
     name: "Sertraline",
     dosage: "50mg",
     frequency: "Once daily",
-    notes: "Take in the morning"
+    notes: "Take in the morning",
+    type: "medication"
   },
   {
     id: "med7",
     name: "Ibuprofen",
     dosage: "400mg",
     frequency: "Every 6 hours as needed",
-    notes: "Take with food"
+    notes: "Take with food",
+    type: "medication"
   },
   {
     id: "med8",
     name: "Levothyroxine",
     dosage: "75mcg",
-    frequency: "Once daily on empty stomach"
+    frequency: "Once daily on empty stomach",
+    type: "medication"
   }
 ];
 
@@ -161,10 +169,6 @@ export const getPatientFormData = (patientId: string) => {
     },
     vitals: {
       bloodPressure: "120/80",
-      heartRate: "75",
-      temperature: "98.6",
-      respiratoryRate: "16",
-      oxygenSaturation: "98",
       height: "5'10\"",
       weight: "170"
     },

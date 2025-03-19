@@ -468,45 +468,6 @@ const PatientForm = () => {
                     </tbody>
                   </table>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                  <div className="space-y-2">
-                    <Label htmlFor="heartRate">Heart Rate (bpm)</Label>
-                    <Input 
-                      id="heartRate"
-                      value={formData.vitals.heartRate}
-                      onChange={(e) => handleInputChange("vitals", "heartRate", e.target.value)}
-                      disabled={!canEditNurseSection}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="temperature">Temperature (°F)</Label>
-                    <Input 
-                      id="temperature"
-                      value={formData.vitals.temperature}
-                      onChange={(e) => handleInputChange("vitals", "temperature", e.target.value)}
-                      disabled={!canEditNurseSection}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="respiratoryRate">Respiratory Rate (breaths/min)</Label>
-                    <Input 
-                      id="respiratoryRate"
-                      value={formData.vitals.respiratoryRate}
-                      onChange={(e) => handleInputChange("vitals", "respiratoryRate", e.target.value)}
-                      disabled={!canEditNurseSection}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="oxygenSaturation">Oxygen Saturation (%)</Label>
-                    <Input 
-                      id="oxygenSaturation"
-                      value={formData.vitals.oxygenSaturation}
-                      onChange={(e) => handleInputChange("vitals", "oxygenSaturation", e.target.value)}
-                      disabled={!canEditNurseSection}
-                    />
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>

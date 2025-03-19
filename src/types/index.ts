@@ -23,6 +23,10 @@ export interface Vital {
   bloodPressure: string;
   height: string;
   weight: string;
+  heartRate?: string;
+  temperature?: string;
+  respiratoryRate?: string;
+  oxygenSaturation?: string;
 }
 
 export interface SummaryFinding {
