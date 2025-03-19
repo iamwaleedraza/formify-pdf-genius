@@ -15,14 +15,12 @@ export interface Medication {
   dosage: string;
   frequency: string;
   notes?: string;
+  type: 'medication' | 'supplement';
+  link?: string;
 }
 
 export interface Vital {
   bloodPressure: string;
-  heartRate: string;
-  temperature: string;
-  respiratoryRate: string;
-  oxygenSaturation: string;
   height: string;
   weight: string;
 }
@@ -60,12 +58,13 @@ export interface PatientFormData {
   doctorNotes: string;
   diagnosis: string;
   treatmentPlan: string;
+  showInsulinResistance?: boolean;  // New field to control insulin resistance section visibility
 }
 
 export interface User {
   id: string;
   name: string;
-  role: 'nurse' | 'doctor';
+  role: 'nurse' | 'doctor' | 'admin';
   email: string;
 }
 

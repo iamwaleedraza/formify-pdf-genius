@@ -63,11 +63,11 @@ const generateSecondPage = (doc: jsPDF, formData: PatientFormData, pageWidth: nu
   doc.setFontSize(12);
   doc.setTextColor(153, 188, 68); // #99bc44
   doc.setFont("Montserrat", "medium");
-  doc.text("Key vital signs", contentMargin, 135);
+  doc.text("Key vital signs", contentMargin, 140);
   
   // Vital signs table with proper width
   autoTable(doc, {
-    startY: 140,
+    startY: 145,
     head: [
       [
         { content: 'Vitals', styles: { fillColor: [153, 188, 68], textColor: [255, 255, 255], fontStyle: 'bold' } },
@@ -159,34 +159,43 @@ const generateThirdPage = (doc: jsPDF, formData: PatientFormData, pageWidth: num
 /**
  * Generates the fourth page with Insulin Resistance and Cardiovascular risk
  */
-const generateFourthPage = (doc: jsPDF, pageWidth: number, contentMargin: number, contentWidth: number) => {
+const generateFourthPage = (doc: jsPDF, formData: PatientFormData, pageWidth: number, contentMargin: number, contentWidth: number) => {
+  const showInsulinResistance = formData.showInsulinResistance === true;
+  
   doc.addPage();
   addLogoToPage(doc);
   
-  // Insulin Resistance section
-  doc.setFontSize(12);
-  doc.setTextColor(153, 188, 68); // #99bc44
-  doc.setFont("Montserrat", "medium");
-  doc.text("Insulin Resistance (Metabolic Syndrome)", contentMargin, 70);
+  let startY = 70;
   
-  // Note: In an actual implementation, we would insert the diagram image here
-  // For now, we'll add a placeholder text
-  doc.setFontSize(9);
-  doc.setTextColor(0, 0, 150);
-  doc.text("[Insulin Resistance Diagram would be placed here]", pageWidth / 2, 100, { align: "center" });
-  
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.text("Figure 1: Insulin resistance and resulting metabolic disturbance", pageWidth / 2, 110, { align: "center" });
+  // Only add Insulin Resistance section if enabled
+  if (showInsulinResistance) {
+    // Insulin Resistance section
+    doc.setFontSize(12);
+    doc.setTextColor(153, 188, 68); // #99bc44
+    doc.setFont("Montserrat", "medium");
+    doc.text("Insulin Resistance (Metabolic Syndrome)", contentMargin, startY);
+    
+    // Add the specified insulin resistance image
+    doc.addImage("/assets/insulin resistance.jpg", "JPEG", contentMargin, startY + 10, contentWidth, 60);
+    
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Figure 1: Insulin resistance and resulting metabolic disturbance", pageWidth / 2, startY + 75, { align: "center" });
+    
+    startY = startY + 85; // Adjust start position for next section
+  }
   
   // Cardiovascular risk table
   doc.setFontSize(12);
   doc.setTextColor(153, 188, 68); // #99bc44
   doc.setFont("Montserrat", "medium");
-  doc.text("Cardiovascular risk (*Apo B : Apo A1 ratio)", contentMargin, 130);
+  doc.text("Cardiovascular risk (*Apo B : Apo A1 ratio)", contentMargin, startY);
+  
+  // Determine which row to highlight based on gender
+  const isMale = formData.patientInfo.gender === 'Male';
   
   autoTable(doc, {
-    startY: 135,
+    startY: startY + 5,
     head: [
       [
         { content: '', styles: { fillColor: [153, 188, 68], textColor: [255, 255, 255], fontStyle: 'bold' } },
@@ -212,6 +221,24 @@ const generateFourthPage = (doc: jsPDF, pageWidth: number, contentMargin: number
       2: { cellWidth: 40 },
       3: { cellWidth: 40 }
     },
+    didDrawCell: (data) => {
+      // Highlight the row based on gender
+      if (data.section === 'body') {
+        const rowIndex = data.row.index;
+        if ((isMale && rowIndex === 0) || (!isMale && rowIndex === 1)) {
+          doc.setFillColor(255, 255, 200); // Light yellow highlight
+          doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
+          
+          // Re-draw text since we covered it with the highlight
+          doc.setTextColor(60, 60, 60);
+          doc.text(
+            data.cell.text,
+            data.cell.x + data.cell.padding('left'),
+            data.cell.y + data.cell.padding('top') + data.cell.contentHeight / 2 + 1
+          );
+        }
+      }
+    },
     margin: { left: contentMargin, right: contentMargin }
   });
   
@@ -234,7 +261,7 @@ const generateFifthPage = (doc: jsPDF, formData: PatientFormData, pageWidth: num
   
   // Nutrition recommendations table
   autoTable(doc, {
-    startY: 75,
+    startY: 80,
     head: [
       [
         { content: 'Nutrition', styles: { fillColor: [153, 188, 68], textColor: [255, 255, 255], fontStyle: 'bold' } },
@@ -305,9 +332,9 @@ const generateSixthPage = (doc: jsPDF, formData: PatientFormData, pageWidth: num
     margin: { left: contentMargin, right: contentMargin }
   });
   
-  // Sleep and stress recommendations table
+  // Sleep and stress recommendations table with improved spacing
   autoTable(doc, {
-    startY: 160,
+    startY: 170,
     head: [
       [
         { content: 'Sleep and Stress', styles: { fillColor: [153, 188, 68], textColor: [255, 255, 255], fontStyle: 'bold' } },
@@ -378,7 +405,7 @@ const generateSeventhPage = (doc: jsPDF, formData: PatientFormData, medications:
   }
   
   autoTable(doc, {
-    startY: 75,
+    startY: 80,
     head: [
       [
         { content: 'Medications', styles: { fillColor: [153, 188, 68], textColor: [255, 255, 255], fontStyle: 'bold' } },
@@ -402,15 +429,15 @@ const generateSeventhPage = (doc: jsPDF, formData: PatientFormData, medications:
     margin: { left: contentMargin, right: contentMargin }
   });
   
-  // Supplements title
+  // Supplements title with improved spacing
   doc.setFontSize(12);
   doc.setTextColor(153, 188, 68); // #99bc44
   doc.setFont("Montserrat", "medium");
-  doc.text("Supplements", contentMargin, 150);
+  doc.text("Supplements", contentMargin, 160);
   
   // Supplements table with specific dosages
   autoTable(doc, {
-    startY: 155,
+    startY: 170,
     head: [
       [
         { content: 'Supplements', styles: { fillColor: [153, 188, 68], textColor: [255, 255, 255], fontStyle: 'bold' } },
@@ -457,7 +484,7 @@ const generateEighthPage = (doc: jsPDF, pageWidth: number, contentMargin: number
   doc.text("Follow-ups and referrals", contentMargin, 70);
   
   autoTable(doc, {
-    startY: 75,
+    startY: 80,
     head: [
       [
         { content: 'With', styles: { fillColor: [153, 188, 68], textColor: [255, 255, 255], fontStyle: 'bold' } },
@@ -490,9 +517,9 @@ const generateEighthPage = (doc: jsPDF, pageWidth: number, contentMargin: number
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
   doc.setFont("Montserrat", "normal");
-  doc.text("Kind Regards,", contentMargin, 150);
+  doc.text("Kind Regards,", contentMargin, 160);
   doc.setFont("Montserrat", "bold");
-  doc.text("Dr Eslam Yakout", contentMargin, 160);
+  doc.text("Dr Eslam Yakout", contentMargin, 170);
   
   // Add page number
   addPageNumber(doc, 8, pageWidth);
@@ -520,7 +547,7 @@ export const generatePDF = (formData: PatientFormData, medications: Medication[]
   generateFirstPage(doc, pageWidth, contentMargin, contentWidth);
   generateSecondPage(doc, formData, pageWidth, contentMargin, contentWidth);
   generateThirdPage(doc, formData, pageWidth, contentMargin, contentWidth);
-  generateFourthPage(doc, pageWidth, contentMargin, contentWidth);
+  generateFourthPage(doc, formData, pageWidth, contentMargin, contentWidth);
   generateFifthPage(doc, formData, pageWidth, contentMargin, contentWidth);
   generateSixthPage(doc, formData, pageWidth, contentMargin, contentWidth);
   generateSeventhPage(doc, formData, medications, pageWidth, contentMargin, contentWidth);

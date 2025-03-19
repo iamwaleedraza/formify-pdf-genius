@@ -20,17 +20,26 @@ const AddPatientDialog = ({ onAddPatient }: AddPatientDialogProps) => {
   const [patientData, setPatientData] = useState({
     name: "",
     dateOfBirth: "",
-    gender: "",
-    medicalRecordNumber: ""
+    gender: ""
   });
 
   const handleChange = (field: string, value: string) => {
     setPatientData(prev => ({ ...prev, [field]: value }));
   };
 
+  const generateMRN = () => {
+    // Generate a random MRN with format MRN-XXXXXXXX where X is alphanumeric
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let mrn = "MRN-";
+    for (let i = 0; i < 8; i++) {
+      mrn += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return mrn;
+  };
+
   const handleSubmit = () => {
     // Validate
-    if (!patientData.name || !patientData.dateOfBirth || !patientData.gender || !patientData.medicalRecordNumber) {
+    if (!patientData.name || !patientData.dateOfBirth || !patientData.gender) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields",
@@ -41,13 +50,16 @@ const AddPatientDialog = ({ onAddPatient }: AddPatientDialogProps) => {
 
     setIsLoading(true);
 
+    // Auto-generate MRN
+    const medicalRecordNumber = generateMRN();
+
     // Create new patient
     const newPatient: Patient = {
       id: `p${Date.now()}`,
       name: patientData.name,
       dateOfBirth: patientData.dateOfBirth,
       gender: patientData.gender,
-      medicalRecordNumber: patientData.medicalRecordNumber,
+      medicalRecordNumber,
       lastUpdated: new Date().toISOString(),
       status: 'nurse-pending'
     };
@@ -59,14 +71,13 @@ const AddPatientDialog = ({ onAddPatient }: AddPatientDialogProps) => {
       setPatientData({
         name: "",
         dateOfBirth: "",
-        gender: "",
-        medicalRecordNumber: ""
+        gender: ""
       });
       setOpen(false);
       
       toast({
         title: "Patient added",
-        description: `${newPatient.name} has been added successfully`
+        description: `${newPatient.name} has been added successfully with MRN: ${medicalRecordNumber}`
       });
     }, 1000);
   };
@@ -98,16 +109,6 @@ const AddPatientDialog = ({ onAddPatient }: AddPatientDialogProps) => {
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="mrn">Medical Record Number</Label>
-            <Input 
-              id="mrn" 
-              value={patientData.medicalRecordNumber}
-              onChange={(e) => handleChange("medicalRecordNumber", e.target.value)}
-              placeholder="Enter MRN"
-            />
-          </div>
-          
-          <div className="grid gap-2">
             <Label htmlFor="dob">Date of Birth</Label>
             <Input 
               id="dob" 
@@ -132,6 +133,16 @@ const AddPatientDialog = ({ onAddPatient }: AddPatientDialogProps) => {
                 <SelectItem value="Other">Other</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="mrn">Medical Record Number</Label>
+            <Input 
+              id="mrn" 
+              value="Will be auto-generated"
+              disabled
+              className="bg-gray-100"
+            />
           </div>
         </div>
         <DialogFooter>
