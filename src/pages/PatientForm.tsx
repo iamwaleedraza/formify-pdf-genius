@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -37,19 +36,6 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { generatePDF } from "@/lib/pdfService";
 
-// Initialize empty SummaryFinding object
-const emptySummaryFinding = {
-  glucoseMetabolism: '',
-  lipidProfile: '',
-  inflammation: '',
-  uricAcid: '',
-  vitamins: '',
-  minerals: '',
-  sexHormones: '',
-  renalLiverFunction: '',
-  cancerMarkers: ''
-};
-
 const PatientForm = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -77,11 +63,6 @@ const PatientForm = () => {
         if (!patientData) {
           navigate("/patients");
           return;
-        }
-        
-        // Add summaryFindings if it doesn't exist
-        if (formDataResult && !formDataResult.summaryFindings) {
-          formDataResult.summaryFindings = emptySummaryFinding;
         }
         
         setPatient(patientData);
@@ -230,24 +211,19 @@ const PatientForm = () => {
   const canEditDoctorSection = currentUser?.role === "doctor" && 
     (patient?.status === "doctor-pending" || patient?.status === "completed");
 
-  // Helper function to calculate BMI
   const calculateBMI = (height: string, weight: string): string => {
     if (!height || !weight) return '-';
     
-    // Handle height in different formats
     let heightInMeters = 0;
     if (height.includes("'")) {
-      // Format like 5'10"
       const parts = height.replace(/"/g, '').split("'");
       const feet = parseFloat(parts[0]);
       const inches = parseFloat(parts[1] || '0');
       heightInMeters = ((feet * 12) + inches) * 0.0254;
     } else {
-      // Assume height is in cm
       heightInMeters = parseFloat(height) / 100;
     }
     
-    // Convert weight to kg if it's in lbs
     let weightInKg = parseFloat(weight);
     if (height.includes('lbs')) {
       weightInKg = weightInKg * 0.45359237;
@@ -259,7 +235,6 @@ const PatientForm = () => {
     return bmi.toFixed(1);
   };
 
-  // Calculate age from date of birth
   const calculateAge = (dateOfBirth: string): string => {
     if (!dateOfBirth) return '-';
     const today = new Date();

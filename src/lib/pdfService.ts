@@ -1,5 +1,5 @@
 
-import { PatientFormData } from "@/types";
+import { PatientFormData, Medication } from "@/types";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -8,10 +8,11 @@ const drawDNALogo = (doc: jsPDF, x: number, y: number, scale: number = 1) => {
   const originalX = x;
   const originalY = y;
   
-  // Scale
+  // Scale - using matrix transformation instead of translate/scale
   doc.saveGraphicsState();
-  doc.translate(originalX, originalY);
-  doc.scale(scale, scale);
+  // Apply transformation matrix for translation and scaling
+  // Parameters: a, b, c, d, e, f (where e,f are translation x,y and a,d are scaling x,y)
+  doc.setCurrentTransformationMatrix([scale, 0, 0, scale, originalX, originalY]);
   
   // Grey "d" part
   doc.setFillColor(164, 165, 165); // #a4a5a5

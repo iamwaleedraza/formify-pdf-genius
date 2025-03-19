@@ -1,5 +1,4 @@
-
-import { Medication, Patient, User } from "@/types";
+import { Medication, Patient, User, SummaryFinding } from "@/types";
 
 export const mockMedications: Medication[] = [
   {
@@ -139,6 +138,19 @@ export const getCurrentUser = () => {
 };
 
 export const getPatientFormData = (patientId: string) => {
+  // Initialize empty SummaryFinding object
+  const emptySummaryFinding: SummaryFinding = {
+    glucoseMetabolism: '',
+    lipidProfile: '',
+    inflammation: '',
+    uricAcid: '',
+    vitamins: '',
+    minerals: '',
+    sexHormones: '',
+    renalLiverFunction: '',
+    cancerMarkers: ''
+  };
+
   // Mock form data for a patient
   return Promise.resolve({
     patientInfo: {
@@ -156,6 +168,7 @@ export const getPatientFormData = (patientId: string) => {
       height: "5'10\"",
       weight: "170"
     },
+    summaryFindings: emptySummaryFinding,
     medications: [
       {
         id: "pm1",
