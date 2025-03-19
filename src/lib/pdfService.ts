@@ -11,8 +11,9 @@ const drawDNALogo = (doc: jsPDF, x: number, y: number, scale: number = 1) => {
   // Scale - using matrix transformation instead of translate/scale
   doc.saveGraphicsState();
   
-  // Apply transformation - moving to correct position and scaling
-  doc.transform(scale, 0, 0, scale, originalX, originalY);
+  // For jsPDF 3.0.0, use the correct matrix transformation method
+  // Move to position and apply scaling
+  doc.setTransform(scale, 0, 0, scale, originalX, originalY);
   
   // Grey "d" part
   doc.setFillColor(164, 165, 165); // #a4a5a5
