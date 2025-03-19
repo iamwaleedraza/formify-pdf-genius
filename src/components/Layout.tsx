@@ -74,7 +74,7 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="flex flex-col h-full">
           {/* Logo and app name */}
           <div className="flex items-center h-16 px-6 border-b border-border">
-            <img src="/assets/dna-logo.svg" alt="DNA Health" className="h-10 mr-2" />
+            <img src="/lovable-uploads/590a0f18-78d7-430b-8fad-8482b627e08e.png" alt="DNA Health" className="h-10 mr-2" />
             <span className="text-lg font-semibold text-brand-text">DNA Health</span>
           </div>
 
