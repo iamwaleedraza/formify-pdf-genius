@@ -269,10 +269,10 @@ const generateFifthPage = (doc: jsPDF, formData: PatientFormData, pageWidth: num
       ]
     ],
     body: [
-      ['Style (nutritional plan)', formData.nurseNotes || ''],
-      ['Protein Consumption', formData.doctorNotes || ''],
-      ['Omissions', ''],
-      ['Additional Considerations', formData.treatmentPlan || '']
+      ['Style (nutritional plan)', formData.nutritionRecommendations?.nutritionalPlan || ''],
+      ['Protein Consumption', formData.nutritionRecommendations?.proteinConsumption || ''],
+      ['Omissions', formData.nutritionRecommendations?.omissions || ''],
+      ['Additional Considerations', formData.nutritionRecommendations?.additionalConsiderations || '']
     ],
     theme: 'grid',
     styles: {
@@ -311,10 +311,10 @@ const generateSixthPage = (doc: jsPDF, formData: PatientFormData, pageWidth: num
       ]
     ],
     body: [
-      ['Focus on', formData.exerciseRecommendations || ''],
-      ['Walking', ''],
-      ['Avoid', ''],
-      ['Tracking', '']
+      ['Focus on', formData.exerciseDetail?.focusOn || ''],
+      ['Walking', formData.exerciseDetail?.walking || ''],
+      ['Avoid', formData.exerciseDetail?.avoid || ''],
+      ['Tracking', formData.exerciseDetail?.tracking || '']
     ],
     theme: 'grid',
     styles: {
@@ -342,8 +342,8 @@ const generateSixthPage = (doc: jsPDF, formData: PatientFormData, pageWidth: num
       ]
     ],
     body: [
-      ['Sleep', ''],
-      ['Stress', '']
+      ['Sleep', formData.sleepStressRecommendations?.sleep || ''],
+      ['Stress', formData.sleepStressRecommendations?.stress || '']
     ],
     theme: 'grid',
     styles: {
@@ -435,6 +435,32 @@ const generateSeventhPage = (doc: jsPDF, formData: PatientFormData, medications:
   doc.setFont("Montserrat", "medium");
   doc.text("Supplements", contentMargin, 160);
   
+  // Get supplements from formData or use defaults
+  const supplementRows = (formData.supplements || []).map(sup => {
+    const supplement = medications.find(m => m.id === sup.supplementId);
+    return [
+      supplement?.name || '',
+      sup.dosage || '',
+      sup.source || ''
+    ];
+  });
+  
+  // If no supplements, add default rows
+  if (supplementRows.length === 0) {
+    supplementRows.push(
+      ['Biogena Multispektrum', '2 capsules once daily in the morning (am)', 'Clinic'],
+      ['Biogena Omni Lactis', '2 capsules once daily with food (any time)', 'Clinic']
+    );
+  }
+  
+  // Limit to 4 supplements
+  const displayedSupplements = supplementRows.slice(0, 4);
+  
+  // Add empty rows to match the design
+  while (displayedSupplements.length < 4) {
+    displayedSupplements.push(['', '', '']);
+  }
+  
   // Supplements table with specific dosages
   autoTable(doc, {
     startY: 170,
@@ -445,12 +471,7 @@ const generateSeventhPage = (doc: jsPDF, formData: PatientFormData, medications:
         { content: 'Source', styles: { fillColor: [153, 188, 68], textColor: [255, 255, 255], fontStyle: 'bold' } }
       ]
     ],
-    body: [
-      ['Biogena Multispektrum', '2 capsules once daily in the morning (am)', 'Clinic'],
-      ['Biogena Omni Lactis', '2 capsules once daily with food (any time)', 'Clinic'],
-      ['', '', ''],
-      ['', '', '']
-    ],
+    body: displayedSupplements,
     theme: 'grid',
     styles: {
       fontSize: 10,
@@ -473,7 +494,7 @@ const generateSeventhPage = (doc: jsPDF, formData: PatientFormData, medications:
 /**
  * Generates the eighth page with Follow-ups
  */
-const generateEighthPage = (doc: jsPDF, pageWidth: number, contentMargin: number, contentWidth: number) => {
+const generateEighthPage = (doc: jsPDF, formData: PatientFormData, pageWidth: number, contentMargin: number, contentWidth: number) => {
   doc.addPage();
   addLogoToPage(doc);
   
@@ -482,6 +503,29 @@ const generateEighthPage = (doc: jsPDF, pageWidth: number, contentMargin: number
   doc.setTextColor(153, 188, 68); // #99bc44
   doc.setFont("Montserrat", "medium");
   doc.text("Follow-ups and referrals", contentMargin, 70);
+  
+  // Get follow-ups from form data or use defaults
+  const followUpRows = (formData.followUps || []).map(followUp => [
+    followUp.withDoctor || '',
+    followUp.forReason || '',
+    followUp.date || ''
+  ]);
+  
+  // If no follow-ups, add default rows
+  if (followUpRows.length === 0) {
+    followUpRows.push(
+      ['Dr Nas', 'Follow up', '23/10/2025'],
+      ['Dr Ismail', 'Consultation', '25/10/2025']
+    );
+  }
+  
+  // Limit to 4 follow-ups
+  const displayedFollowUps = followUpRows.slice(0, 4);
+  
+  // Add empty rows to match the design
+  while (displayedFollowUps.length < 4) {
+    displayedFollowUps.push(['', '', '']);
+  }
   
   autoTable(doc, {
     startY: 80,
@@ -492,12 +536,7 @@ const generateEighthPage = (doc: jsPDF, pageWidth: number, contentMargin: number
         { content: 'Date', styles: { fillColor: [153, 188, 68], textColor: [255, 255, 255], fontStyle: 'bold' } }
       ]
     ],
-    body: [
-      ['Dr Nas', 'Follow up', '23/10/2025'],
-      ['Dr Ismail', 'Consultation', '25/10/2025'],
-      ['', '', ''],
-      ['', '', '']
-    ],
+    body: displayedFollowUps,
     theme: 'grid',
     styles: {
       fontSize: 10,
@@ -551,7 +590,7 @@ export const generatePDF = (formData: PatientFormData, medications: Medication[]
   generateFifthPage(doc, formData, pageWidth, contentMargin, contentWidth);
   generateSixthPage(doc, formData, pageWidth, contentMargin, contentWidth);
   generateSeventhPage(doc, formData, medications, pageWidth, contentMargin, contentWidth);
-  generateEighthPage(doc, pageWidth, contentMargin, contentWidth);
+  generateEighthPage(doc, formData, pageWidth, contentMargin, contentWidth);
   
   // Save the PDF
   doc.save(`${patientInfo.name.replace(/\s+/g, '_')}_Medical_Report.pdf`);

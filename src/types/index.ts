@@ -41,6 +41,31 @@ export interface SummaryFinding {
   cancerMarkers: string;
 }
 
+export interface NutritionRecommendation {
+  nutritionalPlan: string;
+  proteinConsumption: string;
+  omissions: string;
+  additionalConsiderations: string;
+}
+
+export interface ExerciseRecommendation {
+  focusOn: string;
+  walking: string;
+  avoid: string;
+  tracking: string;
+}
+
+export interface SleepStressRecommendation {
+  sleep: string;
+  stress: string;
+}
+
+export interface FollowUp {
+  withDoctor: string;
+  forReason: string;
+  date: string;
+}
+
 export interface PatientFormData {
   patientInfo: {
     name: string;
@@ -57,12 +82,22 @@ export interface PatientFormData {
     frequency: string;
     notes?: string;
   }[];
+  supplements?: {
+    id: string;
+    supplementId: string;
+    dosage: string;
+    source: string;
+  }[];
   exerciseRecommendations: string;
   nurseNotes: string;
   doctorNotes: string;
   diagnosis: string;
   treatmentPlan: string;
-  showInsulinResistance?: boolean;  // New field to control insulin resistance section visibility
+  showInsulinResistance: boolean;
+  nutritionRecommendations: NutritionRecommendation;
+  exerciseDetail: ExerciseRecommendation;
+  sleepStressRecommendations: SleepStressRecommendation;
+  followUps: FollowUp[];
 }
 
 export interface User {

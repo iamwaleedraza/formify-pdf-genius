@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { Patient } from "@/types";
 import { UserPlus } from "lucide-react";
+import * as databaseService from "@/services/databaseService";
 
 interface AddPatientDialogProps {
   onAddPatient: (patient: Patient) => void;
@@ -27,17 +28,7 @@ const AddPatientDialog = ({ onAddPatient }: AddPatientDialogProps) => {
     setPatientData(prev => ({ ...prev, [field]: value }));
   };
 
-  const generateMRN = () => {
-    // Generate a random MRN with format MRN-XXXXXXXX where X is alphanumeric
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let mrn = "MRN-";
-    for (let i = 0; i < 8; i++) {
-      mrn += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return mrn;
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validate
     if (!patientData.name || !patientData.dateOfBirth || !patientData.gender) {
       toast({
@@ -50,22 +41,27 @@ const AddPatientDialog = ({ onAddPatient }: AddPatientDialogProps) => {
 
     setIsLoading(true);
 
-    // Auto-generate MRN
-    const medicalRecordNumber = generateMRN();
+    try {
+      // Auto-generate MRN
+      const medicalRecordNumber = databaseService.generateMRN();
 
-    // Create new patient
-    const newPatient: Patient = {
-      id: `p${Date.now()}`,
-      name: patientData.name,
-      dateOfBirth: patientData.dateOfBirth,
-      gender: patientData.gender,
-      medicalRecordNumber,
-      lastUpdated: new Date().toISOString(),
-      status: 'nurse-pending'
-    };
+      // Create new patient
+      const newPatient: Patient = {
+        id: `p${Date.now()}`,
+        name: patientData.name,
+        dateOfBirth: patientData.dateOfBirth,
+        gender: patientData.gender,
+        medicalRecordNumber,
+        lastUpdated: new Date().toISOString(),
+        status: 'nurse-pending'
+      };
 
-    // Simulate API call
-    setTimeout(() => {
+      // Save patient to database
+      await databaseService.addPatient(newPatient);
+
+      // Initialize form data for the new patient
+      await databaseService.getPatientFormData(newPatient.id);
+
       setIsLoading(false);
       onAddPatient(newPatient);
       setPatientData({
@@ -79,7 +75,16 @@ const AddPatientDialog = ({ onAddPatient }: AddPatientDialogProps) => {
         title: "Patient added",
         description: `${newPatient.name} has been added successfully with MRN: ${medicalRecordNumber}`
       });
-    }, 1000);
+    } catch (error) {
+      console.error("Error adding patient:", error);
+      setIsLoading(false);
+      
+      toast({
+        title: "Error",
+        description: "Failed to add patient. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

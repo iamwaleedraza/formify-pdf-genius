@@ -33,6 +33,10 @@ import { NotesRecommendationsTab } from "@/components/patient-form/NotesRecommen
 import { LoadingState } from "@/components/patient-form/LoadingState";
 import { NotFoundState } from "@/components/patient-form/NotFoundState";
 import { calculateBMI, calculateAge } from "@/components/patient-form/utils";
+import { InsulinResistanceTab } from "@/components/patient-form/InsulinResistanceTab";
+import { CardiovascularRiskTab } from "@/components/patient-form/CardiovascularRiskTab";
+import { DoctorRecommendationsTab } from "@/components/patient-form/DoctorRecommendationsTab";
+import { FollowUpTab } from "@/components/patient-form/FollowUpTab";
 
 const PatientForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -125,13 +129,15 @@ const PatientForm = () => {
     }
   };
 
-  const handleInputChange = (section: keyof PatientFormData | "", field: string, value: string) => {
+  const handleInputChange = (section: keyof PatientFormData | "", field: string, value: string | boolean) => {
     if (!formData) return;
     
     setFormData(prev => {
       if (!prev) return prev;
       
-      if (section === "patientInfo" || section === "vitals" || section === "summaryFindings") {
+      if (section === "patientInfo" || section === "vitals" || section === "summaryFindings" || 
+          section === "nutritionRecommendations" || section === "exerciseDetail" || 
+          section === "sleepStressRecommendations") {
         return {
           ...prev,
           [section]: {
@@ -203,6 +209,60 @@ const PatientForm = () => {
     });
   };
 
+  const handleAddFollowUp = () => {
+    if (!formData) return;
+    
+    const newFollowUp = {
+      withDoctor: "",
+      forReason: "",
+      date: ""
+    };
+    
+    setFormData(prev => {
+      if (!prev) return prev;
+      
+      return {
+        ...prev,
+        followUps: [...(prev.followUps || []), newFollowUp]
+      };
+    });
+  };
+
+  const handleRemoveFollowUp = (index: number) => {
+    if (!formData) return;
+    
+    setFormData(prev => {
+      if (!prev) return prev;
+      
+      const updatedFollowUps = [...(prev.followUps || [])];
+      updatedFollowUps.splice(index, 1);
+      
+      return {
+        ...prev,
+        followUps: updatedFollowUps
+      };
+    });
+  };
+
+  const handleFollowUpChange = (index: number, field: string, value: string) => {
+    if (!formData) return;
+    
+    setFormData(prev => {
+      if (!prev) return prev;
+      
+      const updatedFollowUps = [...(prev.followUps || [])];
+      updatedFollowUps[index] = {
+        ...updatedFollowUps[index],
+        [field]: value
+      };
+      
+      return {
+        ...prev,
+        followUps: updatedFollowUps
+      };
+    });
+  };
+
   const canEditNurseSection = currentUser?.role === "nurse" && 
     (patient?.status === "nurse-pending" || patient?.status === "completed");
   
@@ -242,11 +302,15 @@ const PatientForm = () => {
         />
 
         <Tabs defaultValue="vitals" className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex flex-wrap">
             <TabsTrigger value="vitals">Vitals</TabsTrigger>
             <TabsTrigger value="summaryFindings">Summary Findings</TabsTrigger>
+            <TabsTrigger value="insulinResistance">Insulin Resistance</TabsTrigger>
+            <TabsTrigger value="cardiovascularRisk">Cardiovascular Risk</TabsTrigger>
             <TabsTrigger value="medications">Medications</TabsTrigger>
-            <TabsTrigger value="notes">Notes & Recommendations</TabsTrigger>
+            <TabsTrigger value="docRecommendations">Doctor Recommendations</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="followUps">Follow-ups</TabsTrigger>
           </TabsList>
           
           <TabsContent value="vitals" className="mt-0">
@@ -267,6 +331,21 @@ const PatientForm = () => {
             />
           </TabsContent>
           
+          <TabsContent value="insulinResistance" className="mt-0">
+            <InsulinResistanceTab
+              formData={formData}
+              handleInputChange={handleInputChange}
+              canEditDoctorSection={canEditDoctorSection}
+            />
+          </TabsContent>
+          
+          <TabsContent value="cardiovascularRisk" className="mt-0">
+            <CardiovascularRiskTab
+              formData={formData}
+              canEditDoctorSection={canEditDoctorSection}
+            />
+          </TabsContent>
+          
           <TabsContent value="medications" className="mt-0">
             <MedicationsTab 
               formData={formData}
@@ -278,6 +357,14 @@ const PatientForm = () => {
             />
           </TabsContent>
           
+          <TabsContent value="docRecommendations" className="mt-0">
+            <DoctorRecommendationsTab
+              formData={formData}
+              handleInputChange={handleInputChange}
+              canEditDoctorSection={canEditDoctorSection}
+            />
+          </TabsContent>
+          
           <TabsContent value="notes" className="mt-0">
             <NotesRecommendationsTab 
               formData={formData}
@@ -286,6 +373,16 @@ const PatientForm = () => {
               canEditDoctorSection={canEditDoctorSection}
               handleSave={handleSave}
               isSaving={isSaving}
+            />
+          </TabsContent>
+          
+          <TabsContent value="followUps" className="mt-0">
+            <FollowUpTab
+              formData={formData}
+              handleFollowUpChange={handleFollowUpChange}
+              handleAddFollowUp={handleAddFollowUp}
+              handleRemoveFollowUp={handleRemoveFollowUp}
+              canEditDoctorSection={canEditDoctorSection}
             />
           </TabsContent>
         </Tabs>

@@ -1,4 +1,5 @@
-import { Medication, Patient, User, SummaryFinding } from "@/types";
+
+import { Medication, Patient, User, SummaryFinding, NutritionRecommendation, ExerciseRecommendation, SleepStressRecommendation, FollowUp } from "@/types";
 
 export const mockMedications: Medication[] = [
   {
@@ -61,6 +62,22 @@ export const mockMedications: Medication[] = [
     dosage: "75mcg",
     frequency: "Once daily on empty stomach",
     type: "medication"
+  },
+  {
+    id: "sup1",
+    name: "Biogena Multispektrum",
+    dosage: "2 capsules once daily in the morning (am)",
+    frequency: "Once daily",
+    notes: "",
+    type: "supplement"
+  },
+  {
+    id: "sup2",
+    name: "Biogena Omni Lactis",
+    dosage: "2 capsules once daily with food (any time)",
+    frequency: "Once daily",
+    notes: "",
+    type: "supplement"
   }
 ];
 
@@ -124,6 +141,12 @@ export const mockUsers: User[] = [
     name: "Nurse Richard Brown",
     role: "nurse",
     email: "richard.brown@hospital.com"
+  },
+  {
+    id: "u3",
+    name: "Admin User",
+    role: "admin",
+    email: "admin@hospital.com"
   }
 ];
 
@@ -159,6 +182,31 @@ export const getPatientFormData = (patientId: string) => {
     cancerMarkers: ''
   };
 
+  const emptyNutritionRecommendation: NutritionRecommendation = {
+    nutritionalPlan: '',
+    proteinConsumption: '',
+    omissions: '',
+    additionalConsiderations: ''
+  };
+
+  const emptyExerciseRecommendation: ExerciseRecommendation = {
+    focusOn: '',
+    walking: '',
+    avoid: '',
+    tracking: ''
+  };
+
+  const emptySleepStressRecommendation: SleepStressRecommendation = {
+    sleep: '',
+    stress: ''
+  };
+
+  const emptyFollowUp: FollowUp = {
+    withDoctor: 'Dr Nas',
+    forReason: 'Follow up',
+    date: '23/10/2025'
+  };
+
   // Mock form data for a patient
   return Promise.resolve({
     patientInfo: {
@@ -182,10 +230,23 @@ export const getPatientFormData = (patientId: string) => {
         notes: "Take with food"
       }
     ],
+    supplements: [
+      {
+        id: "ps1",
+        supplementId: "sup1",
+        dosage: "2 capsules once daily in the morning (am)",
+        source: "Clinic"
+      }
+    ],
     exerciseRecommendations: "30 minutes of moderate activity 5 days per week",
     nurseNotes: "Patient reports occasional headaches in the morning",
     doctorNotes: "",
     diagnosis: "",
-    treatmentPlan: ""
+    treatmentPlan: "",
+    showInsulinResistance: false,
+    nutritionRecommendations: emptyNutritionRecommendation,
+    exerciseDetail: emptyExerciseRecommendation,
+    sleepStressRecommendations: emptySleepStressRecommendation,
+    followUps: [emptyFollowUp]
   });
 };

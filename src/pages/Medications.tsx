@@ -1,374 +1,481 @@
 
 import { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import Layout from "@/components/Layout";
 import { Medication } from "@/types";
-import { getMedications, getCurrentUser } from "@/lib/mockData";
+import { Copy, FilePlus, Pill, Plus, Trash2, Vitamins } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import * as databaseService from "@/services/databaseService";
 
 const Medications = () => {
   const { toast } = useToast();
   const [medications, setMedications] = useState<Medication[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentTab, setCurrentTab] = useState("medications");
-  const [editItem, setEditItem] = useState<Medication | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{role: string} | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedMedication, setSelectedMedication] = useState<Medication | null>(null);
+  const [newMedication, setNewMedication] = useState<Omit<Medication, 'id'>>({
+    name: '',
+    dosage: '',
+    frequency: '',
+    notes: '',
+    type: 'medication',
+    link: ''
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const medsData = await getMedications();
+        const medsData = await databaseService.getMedications();
+        const user = await databaseService.getCurrentUser();
+        
         setMedications(medsData);
+        setCurrentUser(user);
+        setIsAdmin(user?.role === 'admin');
       } catch (error) {
-        console.error("Error fetching medications:", error);
+        console.error("Error fetching medications data:", error);
         toast({
           title: "Error",
           description: "Could not load medications data",
           variant: "destructive"
         });
-      } finally {
-        setIsLoading(false);
       }
     };
     
     fetchData();
-    
-    // Check if user is admin, if not redirect
-    const checkUserRole = async () => {
-      const user = await getCurrentUser();
-      if (user.role !== 'admin') {
-        toast({
-          title: "Access Denied",
-          description: "Only administrators can access this page",
-          variant: "destructive"
-        });
-        // Implement redirect logic here if needed
-      }
-    };
-    
-    checkUserRole();
   }, [toast]);
 
-  const handleAddItem = () => {
-    setEditItem({
-      id: "",
-      name: "",
-      dosage: "",
-      frequency: "",
-      type: currentTab === "medications" ? "medication" : "supplement",
-      link: ""
-    });
-    setIsDialogOpen(true);
-  };
-
-  const handleEditItem = (item: Medication) => {
-    setEditItem(item);
-    setIsDialogOpen(true);
-  };
-
-  const handleDeleteItem = (id: string) => {
-    setMedications(prev => prev.filter(med => med.id !== id));
-    toast({
-      title: "Item Deleted",
-      description: "The item has been deleted successfully"
-    });
-  };
-
-  const handleSaveItem = () => {
-    if (!editItem) return;
-    
-    if (!editItem.name || !editItem.dosage) {
+  const handleAddMedication = async () => {
+    if (!newMedication.name || !newMedication.dosage) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
+        title: "Missing information",
+        description: "Please enter a name and dosage for the medication",
         variant: "destructive"
       });
       return;
     }
-    
-    if (editItem.id) {
-      // Update existing item
-      setMedications(prev => 
-        prev.map(item => item.id === editItem.id ? editItem : item)
-      );
-      toast({
-        title: "Item Updated",
-        description: "The item has been updated successfully"
-      });
-    } else {
-      // Add new item
-      const newItem = {
-        ...editItem,
-        id: `med-${Date.now()}`
+
+    try {
+      const medicationToAdd: Medication = {
+        ...newMedication,
+        id: `med${Date.now()}`
       };
-      setMedications(prev => [...prev, newItem]);
+      
+      await databaseService.addMedication(medicationToAdd);
+      
+      setMedications(prev => [...prev, medicationToAdd]);
+      setNewMedication({
+        name: '',
+        dosage: '',
+        frequency: '',
+        notes: '',
+        type: 'medication',
+        link: ''
+      });
+      
       toast({
-        title: "Item Added",
-        description: "The new item has been added successfully"
+        title: "Medication added",
+        description: `${medicationToAdd.name} has been added successfully`
+      });
+    } catch (error) {
+      console.error("Error adding medication:", error);
+      toast({
+        title: "Error",
+        description: "Could not add medication",
+        variant: "destructive"
       });
     }
+  };
+
+  const handleUpdateMedication = async () => {
+    if (!selectedMedication) return;
     
-    setIsDialogOpen(false);
-    setEditItem(null);
+    try {
+      await databaseService.updateMedication(selectedMedication);
+      
+      setMedications(prev => 
+        prev.map(med => med.id === selectedMedication.id ? selectedMedication : med)
+      );
+      
+      toast({
+        title: "Medication updated",
+        description: `${selectedMedication.name} has been updated successfully`
+      });
+      
+      setSelectedMedication(null);
+    } catch (error) {
+      console.error("Error updating medication:", error);
+      toast({
+        title: "Error",
+        description: "Could not update medication",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleInputChange = (field: keyof Medication, value: string) => {
-    if (!editItem) return;
-    setEditItem({ ...editItem, [field]: value });
+  const handleDeleteMedication = async (id: string) => {
+    try {
+      await databaseService.deleteMedication(id);
+      
+      setMedications(prev => prev.filter(med => med.id !== id));
+      
+      if (selectedMedication?.id === id) {
+        setSelectedMedication(null);
+      }
+      
+      toast({
+        title: "Medication deleted",
+        description: "The medication has been deleted successfully"
+      });
+    } catch (error) {
+      console.error("Error deleting medication:", error);
+      toast({
+        title: "Error",
+        description: "Could not delete medication",
+        variant: "destructive"
+      });
+    }
   };
 
-  const filteredItems = medications.filter(med => 
-    med.type === (currentTab === "medications" ? "medication" : "supplement")
-  );
+  const handleDuplicateMedication = (medication: Medication) => {
+    const duplicated: Omit<Medication, 'id'> = {
+      name: `${medication.name} (Copy)`,
+      dosage: medication.dosage,
+      frequency: medication.frequency,
+      notes: medication.notes,
+      type: medication.type,
+      link: medication.link
+    };
+    
+    setNewMedication(duplicated);
+  };
 
-  if (isLoading) {
-    return (
-      <Layout>
-        <div className="flex flex-col items-center justify-center h-96">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-          <p className="text-muted-foreground">Loading data...</p>
+  const renderMedicationList = (type: 'medication' | 'supplement') => {
+    const filteredMeds = medications.filter(med => med.type === type);
+    
+    if (filteredMeds.length === 0) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          No {type === 'medication' ? 'medications' : 'supplements'} found
         </div>
-      </Layout>
+      );
+    }
+    
+    return (
+      <div className="space-y-4">
+        {filteredMeds.map(med => (
+          <Card key={med.id} className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className="flex items-start p-4">
+                <div className="flex-1">
+                  <h3 className="font-medium">{med.name}</h3>
+                  <p className="text-sm text-muted-foreground">Dosage: {med.dosage}</p>
+                  {med.frequency && <p className="text-sm text-muted-foreground">Frequency: {med.frequency}</p>}
+                  {med.notes && <p className="text-sm text-muted-foreground mt-1">Notes: {med.notes}</p>}
+                  {med.link && (
+                    <a 
+                      href={med.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-sm text-primary hover:underline mt-1 inline-block"
+                    >
+                      More information
+                    </a>
+                  )}
+                </div>
+                <div className="flex space-x-2">
+                  {isAdmin && (
+                    <>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => setSelectedMedication(med)}
+                      >
+                        <FilePlus className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleDuplicateMedication(med)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteMedication(med.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     );
-  }
+  };
 
   return (
     <Layout>
-      <div className="animate-fade-in">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Medications & Supplements</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage medications and supplements for patient forms
-            </p>
-          </div>
-          <Button onClick={handleAddItem}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add {currentTab === "medications" ? "Medication" : "Supplement"}
-          </Button>
-        </div>
+      <div className="container mx-auto py-6 max-w-5xl">
+        <h1 className="text-2xl font-bold mb-6">Medications & Supplements</h1>
 
-        <Tabs defaultValue="medications" onValueChange={setCurrentTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="medications">Medications</TabsTrigger>
-            <TabsTrigger value="supplements">Supplements</TabsTrigger>
+        <Tabs defaultValue="medications">
+          <TabsList className="mb-4">
+            <TabsTrigger value="medications" className="flex items-center">
+              <Pill className="h-4 w-4 mr-2" />
+              Medications
+            </TabsTrigger>
+            <TabsTrigger value="supplements" className="flex items-center">
+              <Vitamins className="h-4 w-4 mr-2" />
+              Supplements
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="medications" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Medications List</CardTitle>
-                <CardDescription>
-                  Manage medications that will be available for selection in patient forms
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {filteredItems.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-primary/10 text-primary">
-                          <th className="text-left px-4 py-2 border">Name</th>
-                          <th className="text-left px-4 py-2 border">Dosage</th>
-                          <th className="text-left px-4 py-2 border">Frequency</th>
-                          <th className="text-left px-4 py-2 border">Notes</th>
-                          <th className="text-center px-4 py-2 border">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredItems.map(med => (
-                          <tr key={med.id} className="hover:bg-muted/50">
-                            <td className="px-4 py-2 border">{med.name}</td>
-                            <td className="px-4 py-2 border">{med.dosage}</td>
-                            <td className="px-4 py-2 border">{med.frequency}</td>
-                            <td className="px-4 py-2 border">{med.notes || "-"}</td>
-                            <td className="px-4 py-2 border">
-                              <div className="flex justify-center space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEditItem(med)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
-                                  onClick={() => handleDeleteItem(med.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+          <TabsContent value="medications" className="space-y-6">
+            {isAdmin && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Add New Medication</CardTitle>
+                  <CardDescription>
+                    Fill in the details to add a new medication to the database
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="med-name">Medication Name</Label>
+                        <Input 
+                          id="med-name" 
+                          value={newMedication.name}
+                          onChange={(e) => setNewMedication(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Enter medication name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="med-dosage">Dosage</Label>
+                        <Input 
+                          id="med-dosage" 
+                          value={newMedication.dosage}
+                          onChange={(e) => setNewMedication(prev => ({ ...prev, dosage: e.target.value }))}
+                          placeholder="e.g., 500mg"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="med-frequency">Frequency</Label>
+                        <Input 
+                          id="med-frequency" 
+                          value={newMedication.frequency}
+                          onChange={(e) => setNewMedication(prev => ({ ...prev, frequency: e.target.value }))}
+                          placeholder="e.g., Twice daily"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="med-link">Information Link (Optional)</Label>
+                        <Input 
+                          id="med-link" 
+                          value={newMedication.link || ''}
+                          onChange={(e) => setNewMedication(prev => ({ ...prev, link: e.target.value }))}
+                          placeholder="URL to more information"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="med-notes">Notes (Optional)</Label>
+                      <Input 
+                        id="med-notes" 
+                        value={newMedication.notes || ''}
+                        onChange={(e) => setNewMedication(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Additional notes"
+                      />
+                    </div>
+                    <Button onClick={handleAddMedication} className="w-full md:w-auto">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Medication
+                    </Button>
                   </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    No medications added yet. Click the "Add Medication" button to add one.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
+
+            {renderMedicationList('medication')}
           </TabsContent>
 
-          <TabsContent value="supplements" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Supplements List</CardTitle>
-                <CardDescription>
-                  Manage supplements that will be available for selection in patient forms
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {filteredItems.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-primary/10 text-primary">
-                          <th className="text-left px-4 py-2 border">Name</th>
-                          <th className="text-left px-4 py-2 border">Dosage</th>
-                          <th className="text-left px-4 py-2 border">Frequency</th>
-                          <th className="text-left px-4 py-2 border">Notes</th>
-                          <th className="text-center px-4 py-2 border">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredItems.map(med => (
-                          <tr key={med.id} className="hover:bg-muted/50">
-                            <td className="px-4 py-2 border">{med.name}</td>
-                            <td className="px-4 py-2 border">{med.dosage}</td>
-                            <td className="px-4 py-2 border">{med.frequency}</td>
-                            <td className="px-4 py-2 border">{med.notes || "-"}</td>
-                            <td className="px-4 py-2 border">
-                              <div className="flex justify-center space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEditItem(med)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
-                                  onClick={() => handleDeleteItem(med.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+          <TabsContent value="supplements" className="space-y-6">
+            {isAdmin && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Add New Supplement</CardTitle>
+                  <CardDescription>
+                    Fill in the details to add a new supplement to the database
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="supp-name">Supplement Name</Label>
+                        <Input 
+                          id="supp-name" 
+                          value={newMedication.name}
+                          onChange={(e) => setNewMedication(prev => ({ ...prev, name: e.target.value, type: 'supplement' }))}
+                          placeholder="Enter supplement name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="supp-dosage">Dosage</Label>
+                        <Input 
+                          id="supp-dosage" 
+                          value={newMedication.dosage}
+                          onChange={(e) => setNewMedication(prev => ({ ...prev, dosage: e.target.value }))}
+                          placeholder="e.g., 1000mg"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="supp-frequency">Frequency</Label>
+                        <Input 
+                          id="supp-frequency" 
+                          value={newMedication.frequency}
+                          onChange={(e) => setNewMedication(prev => ({ ...prev, frequency: e.target.value }))}
+                          placeholder="e.g., Once daily"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="supp-link">Information Link (Optional)</Label>
+                        <Input 
+                          id="supp-link" 
+                          value={newMedication.link || ''}
+                          onChange={(e) => setNewMedication(prev => ({ ...prev, link: e.target.value }))}
+                          placeholder="URL to more information"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="supp-notes">Notes (Optional)</Label>
+                      <Input 
+                        id="supp-notes" 
+                        value={newMedication.notes || ''}
+                        onChange={(e) => setNewMedication(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Additional notes"
+                      />
+                    </div>
+                    <Button onClick={handleAddMedication} className="w-full md:w-auto">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Supplement
+                    </Button>
                   </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    No supplements added yet. Click the "Add Supplement" button to add one.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
+
+            {renderMedicationList('supplement')}
           </TabsContent>
         </Tabs>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>
-                {editItem?.id ? "Edit" : "Add"} {currentTab === "medications" ? "Medication" : "Supplement"}
-              </DialogTitle>
-              <DialogDescription>
-                Fill in the details for this {currentTab === "medications" ? "medication" : "supplement"}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input 
-                  id="name" 
-                  value={editItem?.name || ""}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder="Enter name"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="dosage">Dosage</Label>
-                <Input 
-                  id="dosage" 
-                  value={editItem?.dosage || ""}
-                  onChange={(e) => handleInputChange("dosage", e.target.value)}
-                  placeholder="Enter dosage"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="frequency">Frequency</Label>
-                <Input 
-                  id="frequency" 
-                  value={editItem?.frequency || ""}
-                  onChange={(e) => handleInputChange("frequency", e.target.value)}
-                  placeholder="Enter frequency"
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea 
-                  id="notes" 
-                  value={editItem?.notes || ""}
-                  onChange={(e) => handleInputChange("notes", e.target.value)}
-                  placeholder="Enter additional notes"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="link">External Link (optional)</Label>
-                <Input 
-                  id="link" 
-                  value={editItem?.link || ""}
-                  onChange={(e) => handleInputChange("link", e.target.value)}
-                  placeholder="Enter reference link"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveItem}>
-                Save {currentTab === "medications" ? "Medication" : "Supplement"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Edit Medication Dialog */}
+        {selectedMedication && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-md mx-4">
+              <CardHeader>
+                <CardTitle>Edit {selectedMedication.type === 'medication' ? 'Medication' : 'Supplement'}</CardTitle>
+                <CardDescription>
+                  Update the details for {selectedMedication.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  <div>
+                    <Label htmlFor="edit-name">Name</Label>
+                    <Input 
+                      id="edit-name" 
+                      value={selectedMedication.name}
+                      onChange={(e) => setSelectedMedication(prev => prev ? { ...prev, name: e.target.value } : null)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-dosage">Dosage</Label>
+                    <Input 
+                      id="edit-dosage" 
+                      value={selectedMedication.dosage}
+                      onChange={(e) => setSelectedMedication(prev => prev ? { ...prev, dosage: e.target.value } : null)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-frequency">Frequency</Label>
+                    <Input 
+                      id="edit-frequency" 
+                      value={selectedMedication.frequency}
+                      onChange={(e) => setSelectedMedication(prev => prev ? { ...prev, frequency: e.target.value } : null)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-type">Type</Label>
+                    <Select 
+                      value={selectedMedication.type}
+                      onValueChange={(value: 'medication' | 'supplement') => 
+                        setSelectedMedication(prev => prev ? { ...prev, type: value } : null)
+                      }
+                    >
+                      <SelectTrigger id="edit-type">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="medication">Medication</SelectItem>
+                        <SelectItem value="supplement">Supplement</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-notes">Notes</Label>
+                    <Input 
+                      id="edit-notes" 
+                      value={selectedMedication.notes || ''}
+                      onChange={(e) => setSelectedMedication(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-link">Information Link</Label>
+                    <Input 
+                      id="edit-link" 
+                      value={selectedMedication.link || ''}
+                      onChange={(e) => setSelectedMedication(prev => prev ? { ...prev, link: e.target.value } : null)}
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-4 mt-4">
+                    <Button variant="outline" onClick={() => setSelectedMedication(null)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUpdateMedication}>
+                      Save Changes
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+        
+        {!isAdmin && (
+          <div className="bg-muted mt-4 p-4 rounded-md">
+            <p className="text-sm text-muted-foreground">
+              Note: Only administrators can add, edit, or delete medications and supplements. 
+              If you need to make changes, please contact an administrator.
+            </p>
+          </div>
+        )}
       </div>
     </Layout>
   );
