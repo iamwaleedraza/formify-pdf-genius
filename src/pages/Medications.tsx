@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import Layout from "@/components/Layout";
 import { Medication } from "@/types";
-import { Copy, FilePlus, Pill, Plus, Trash2, Vitamins } from "lucide-react";
+import { Copy, FilePlus, Pill, Plus, Trash2, Flask } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as databaseService from "@/services/databaseService";
 
@@ -235,7 +234,7 @@ const Medications = () => {
               Medications
             </TabsTrigger>
             <TabsTrigger value="supplements" className="flex items-center">
-              <Vitamins className="h-4 w-4 mr-2" />
+              <Flask className="h-4 w-4 mr-2" />
               Supplements
             </TabsTrigger>
           </TabsList>
@@ -385,7 +384,6 @@ const Medications = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Edit Medication Dialog */}
         {selectedMedication && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <Card className="w-full max-w-md mx-4">
