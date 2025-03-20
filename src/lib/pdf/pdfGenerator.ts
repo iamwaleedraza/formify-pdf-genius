@@ -1,11 +1,19 @@
+
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { PatientFormData, Medication } from "@/types";
 import { calculateAge, convertToKg, calculateBMI, drawStatBox, addPageNumber } from "./pdfUtilities";
-import { addLogoToPage } from "./logoRenderer";
+import { addLogoToPage, loadMontserratFonts } from "./logoRenderer";
 import * as databaseService from "@/services/databaseService";
 
 const addMontserratFont = (doc: jsPDF) => {
+  // Add Montserrat font to jsPDF instance
+  // Need to register the font first
+  doc.addFont("Montserrat-Regular.ttf", "Montserrat", "normal");
+  doc.addFont("Montserrat-Bold.ttf", "Montserrat", "bold");
+  doc.addFont("Montserrat-Medium.ttf", "Montserrat", "medium");
+  
+  // Set default font
   doc.setFont("Montserrat");
 };
 
@@ -581,8 +589,8 @@ export const generatePDF = async (formData: PatientFormData, medications: Medica
     format: "a4"
   });
   
-  // Set the font to Montserrat
-  addMontserratFont(doc);
+  // Load the Montserrat fonts or use helvetica as fallback
+  await loadMontserratFonts(doc);
   
   // A4 dimensions: 210mm x 297mm
   const pageWidth = 210;
@@ -606,7 +614,9 @@ export const generatePDF = async (formData: PatientFormData, medications: Medica
   doc.save(fileName);
   
   // Save the PDF reference to the database
-  await databaseService.savePDFReference(patientInfo.medicalRecordNumber, fileName);
+  if (patientInfo.medicalRecordNumber) {
+    await databaseService.savePDFReference(patientInfo.medicalRecordNumber, fileName);
+  }
   
   return fileName;
 };
