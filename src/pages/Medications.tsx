@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import Layout from "@/components/Layout";
 import { Medication } from "@/types";
-import { Copy, FilePlus, Pill, Plus, Trash2, Flask } from "lucide-react";
+import { Copy, FilePlus, Pill, Plus, Trash2, Beaker } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as databaseService from "@/services/databaseService";
 
@@ -234,7 +234,7 @@ const Medications = () => {
               Medications
             </TabsTrigger>
             <TabsTrigger value="supplements" className="flex items-center">
-              <Flask className="h-4 w-4 mr-2" />
+              <Beaker className="h-4 w-4 mr-2" />
               Supplements
             </TabsTrigger>
           </TabsList>
