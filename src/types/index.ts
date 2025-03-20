@@ -1,4 +1,3 @@
-
 export interface Patient {
   id: string;
   name: string;
@@ -7,6 +6,16 @@ export interface Patient {
   medicalRecordNumber: string;
   lastUpdated: string;
   status: 'nurse-pending' | 'doctor-pending' | 'completed';
+  pdfFiles?: PDFFile[];
+}
+
+export interface PDFFile {
+  id: string;
+  patientId: string;
+  fileName: string;
+  createdAt: string;
+  createdBy: string;
+  url: string;
 }
 
 export interface Medication {
