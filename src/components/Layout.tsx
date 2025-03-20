@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LucideHome, Users, LogOut, Menu, X, Pill } from "lucide-react";
+import { LucideHome, Users, LogOut, Menu, X, Pill, Settings } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getCurrentUser } from "@/lib/mockData";
+import { getCurrentUser, logoutUser } from "@/services/databaseService";
 import { User } from "@/types";
+import { useToast } from "@/components/ui/use-toast";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,15 +17,26 @@ const Layout = ({ children }: LayoutProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const location = useLocation();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchUser = async () => {
-      const user = await getCurrentUser();
-      setCurrentUser(user);
+      try {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+        
+        // If no user is logged in, redirect to login
+        if (!user && location.pathname !== "/login") {
+          navigate("/login");
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
     };
     
     fetchUser();
-  }, []);
+  }, [location.pathname, navigate]);
 
   useEffect(() => {
     if (isMobile && isOpen) {
@@ -37,6 +49,25 @@ const Layout = ({ children }: LayoutProps) => {
       document.body.style.overflow = "auto";
     };
   }, [isMobile, isOpen]);
+
+  const handleSignOut = async () => {
+    try {
+      await logoutUser();
+      setCurrentUser(null);
+      toast({
+        title: "Signed out",
+        description: "You have been signed out successfully"
+      });
+      navigate("/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Error",
+        description: "Could not sign out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const navItems = [
     {
@@ -57,6 +88,12 @@ const Layout = ({ children }: LayoutProps) => {
       label: "Medications & Supplements",
       href: "/medications",
       icon: Pill
+    });
+    
+    navItems.push({
+      label: "Settings",
+      href: "/settings",
+      icon: Settings
     });
   }
 
@@ -115,14 +152,17 @@ const Layout = ({ children }: LayoutProps) => {
           <div className="p-4 border-t border-border">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                {currentUser?.name.charAt(0)}
+                {currentUser?.name?.charAt(0)}
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-brand-text">{currentUser?.name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{currentUser?.role}</p>
               </div>
             </div>
-            <button className="flex items-center w-full px-4 py-2 text-sm text-left rounded-lg text-brand-text/70 hover:bg-accent hover:text-foreground transition-colors">
+            <button 
+              className="flex items-center w-full px-4 py-2 text-sm text-left rounded-lg text-brand-text/70 hover:bg-accent hover:text-foreground transition-colors"
+              onClick={handleSignOut}
+            >
               <LogOut size={18} className="mr-3 text-brand-text/70" />
               Sign out
             </button>

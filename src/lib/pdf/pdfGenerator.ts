@@ -1,9 +1,13 @@
-
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { PatientFormData, Medication } from "@/types";
 import { calculateAge, convertToKg, calculateBMI, drawStatBox, addPageNumber } from "./pdfUtilities";
 import { addLogoToPage } from "./logoRenderer";
+import * as databaseService from "@/services/databaseService";
+
+const addMontserratFont = (doc: jsPDF) => {
+  doc.setFont("Montserrat");
+};
 
 /**
  * Generates the first page of the PDF with health statistics
@@ -567,7 +571,7 @@ const generateEighthPage = (doc: jsPDF, formData: PatientFormData, pageWidth: nu
 /**
  * Generate a complete PDF report for a patient
  */
-export const generatePDF = (formData: PatientFormData, medications: Medication[]): void => {
+export const generatePDF = async (formData: PatientFormData, medications: Medication[]): Promise<string> => {
   const { patientInfo } = formData;
   
   // Create a new PDF document - using A4 size with mm units
@@ -576,6 +580,9 @@ export const generatePDF = (formData: PatientFormData, medications: Medication[]
     unit: "mm",
     format: "a4"
   });
+  
+  // Set the font to Montserrat
+  addMontserratFont(doc);
   
   // A4 dimensions: 210mm x 297mm
   const pageWidth = 210;
@@ -592,6 +599,14 @@ export const generatePDF = (formData: PatientFormData, medications: Medication[]
   generateSeventhPage(doc, formData, medications, pageWidth, contentMargin, contentWidth);
   generateEighthPage(doc, formData, pageWidth, contentMargin, contentWidth);
   
+  // Generate file name
+  const fileName = `${patientInfo.name.replace(/\s+/g, '_')}_Medical_Report.pdf`;
+  
   // Save the PDF
-  doc.save(`${patientInfo.name.replace(/\s+/g, '_')}_Medical_Report.pdf`);
+  doc.save(fileName);
+  
+  // Save the PDF reference to the database
+  await databaseService.savePDFReference(patientInfo.medicalRecordNumber, fileName);
+  
+  return fileName;
 };

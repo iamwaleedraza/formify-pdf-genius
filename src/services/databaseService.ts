@@ -10,8 +10,9 @@ const FORM_DATA_KEY = "dna_health_form_data";
 const MEDICATIONS_KEY = "dna_health_medications";
 const USERS_KEY = "dna_health_users";
 const CURRENT_USER_KEY = "dna_health_current_user";
+const PDF_FILES_KEY = "dna_health_pdf_files";
 
-// Initialize storage with mock data if empty
+// Initialize storage with mock data
 const initializeStorage = () => {
   // Import mock data
   import("@/lib/mockData").then((mockData) => {
@@ -28,7 +29,12 @@ const initializeStorage = () => {
     }
     
     if (!localStorage.getItem(CURRENT_USER_KEY)) {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(mockData.mockUsers[1])); // Default to nurse
+      // Default to doctor now
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(mockData.mockUsers[0])); 
+    }
+    
+    if (!localStorage.getItem(PDF_FILES_KEY)) {
+      localStorage.setItem(PDF_FILES_KEY, JSON.stringify([]));
     }
     
     // Initialize form data for each patient if not exists
@@ -55,7 +61,7 @@ export const getPatients = async (): Promise<Patient[]> => {
 
 export const getPatientById = async (id: string): Promise<Patient | null> => {
   const patients = await getPatients();
-  return patients.find(p => p.id === id) || null;
+  return patients.find(p => p.id === id || p.medicalRecordNumber === id) || null;
 };
 
 export const addPatient = async (patient: Patient): Promise<Patient> => {
@@ -142,6 +148,65 @@ export const getCurrentUser = async (): Promise<User | null> => {
 export const setCurrentUser = async (user: User): Promise<User> => {
   localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
   return user;
+};
+
+export const logoutUser = async (): Promise<void> => {
+  // We don't completely remove the current user, just set to null
+  // so we can remember the last logged in user
+  localStorage.removeItem(CURRENT_USER_KEY);
+};
+
+export const loginUser = async (email: string, password: string): Promise<User | null> => {
+  // In a real app, this would validate credentials against a backend
+  // For now, we'll just check if a user with this email exists
+  const users = await getUsers();
+  const user = users.find(u => u.email === email);
+  
+  if (user) {
+    await setCurrentUser(user);
+    return user;
+  }
+  
+  return null;
+};
+
+// PDF file operations
+interface PDFFile {
+  id: string;
+  patientId: string;
+  fileName: string;
+  createdAt: string;
+  createdBy: string;
+  url: string;
+}
+
+export const savePDFReference = async (patientId: string, fileName: string): Promise<PDFFile> => {
+  const pdfFiles = await getPDFFiles();
+  const currentUser = await getCurrentUser();
+  
+  const newPDFFile: PDFFile = {
+    id: `pdf-${Date.now()}`,
+    patientId,
+    fileName,
+    createdAt: new Date().toISOString(),
+    createdBy: currentUser?.name || "Unknown",
+    url: fileName // In a real app, this would be a URL to the file storage
+  };
+  
+  const updatedPDFFiles = [...pdfFiles, newPDFFile];
+  localStorage.setItem(PDF_FILES_KEY, JSON.stringify(updatedPDFFiles));
+  
+  return newPDFFile;
+};
+
+export const getPDFFiles = async (): Promise<PDFFile[]> => {
+  const pdfFiles = localStorage.getItem(PDF_FILES_KEY);
+  return pdfFiles ? JSON.parse(pdfFiles) : [];
+};
+
+export const getPDFFilesByPatientId = async (patientId: string): Promise<PDFFile[]> => {
+  const pdfFiles = await getPDFFiles();
+  return pdfFiles.filter(pdf => pdf.patientId === patientId);
 };
 
 // Generate a unique MRN

@@ -12,8 +12,11 @@ import {
   getPatientById, 
   getMedications, 
   getCurrentUser, 
-  getPatientFormData 
-} from "@/lib/mockData";
+  getPatientFormData,
+  savePatientFormData,
+  updatePatient,
+  savePDFReference
+} from "@/services/databaseService";
 import { 
   Patient, 
   Medication, 
@@ -86,34 +89,56 @@ const PatientForm = () => {
     fetchData();
   }, [id, navigate, toast]);
 
-  const handleSave = () => {
-    if (!formData) return;
+  const handleSave = async () => {
+    if (!formData || !patient) return;
     
     setIsSaving(true);
     
-    // Simulating save operation
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      // Save form data
+      await savePatientFormData(patient.id, formData);
+      
+      // Update patient status if needed
+      let updatedStatus = patient.status;
+      
+      if (currentUser?.role === "nurse" && patient?.status === "nurse-pending") {
+        updatedStatus = "doctor-pending";
+      } else if (currentUser?.role === "doctor" && patient?.status === "doctor-pending") {
+        updatedStatus = "completed";
+      }
+      
+      if (updatedStatus !== patient.status) {
+        const updatedPatient = {
+          ...patient,
+          status: updatedStatus
+        };
+        
+        await updatePatient(updatedPatient);
+        setPatient(updatedPatient);
+      }
       
       toast({
         title: "Form saved",
         description: "Patient form has been saved successfully",
       });
-      
-      // Update status if needed
-      if (currentUser?.role === "nurse" && patient?.status === "nurse-pending") {
-        setPatient(prev => prev ? { ...prev, status: "doctor-pending" } : null);
-      } else if (currentUser?.role === "doctor" && patient?.status === "doctor-pending") {
-        setPatient(prev => prev ? { ...prev, status: "completed" } : null);
-      }
-    }, 1500);
+    } catch (error) {
+      console.error("Error saving form:", error);
+      toast({
+        title: "Error",
+        description: "Could not save patient form",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleExportPDF = () => {
-    if (!formData || !medications) return;
+  const handleExportPDF = async () => {
+    if (!formData || !patient) return;
     
     try {
-      generatePDF(formData, medications);
+      // Generate the PDF
+      const fileName = await generatePDF(formData, medications);
       
       toast({
         title: "PDF Generated",
