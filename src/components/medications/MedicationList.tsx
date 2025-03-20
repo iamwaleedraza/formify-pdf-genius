@@ -1,8 +1,16 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Medication } from "@/types";
-import { Copy, FilePlus, Trash2 } from "lucide-react";
+import { ArrowUpAZ, ArrowDownAZ, Copy, FilePlus, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 interface MedicationListProps {
   medications: Medication[];
@@ -21,7 +29,25 @@ export const MedicationList = ({
   onDuplicate, 
   onDelete 
 }: MedicationListProps) => {
+  const [sortField, setSortField] = useState<'name' | 'dosage' | 'frequency'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
   const filteredMeds = medications.filter(med => med.type === type);
+  
+  const sortedMeds = [...filteredMeds].sort((a, b) => {
+    const fieldA = a[sortField] || '';
+    const fieldB = b[sortField] || '';
+    
+    if (sortDirection === 'asc') {
+      return fieldA.localeCompare(fieldB);
+    } else {
+      return fieldB.localeCompare(fieldA);
+    }
+  });
+  
+  const toggleSortDirection = () => {
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+  };
   
   if (filteredMeds.length === 0) {
     return (
@@ -33,7 +59,38 @@ export const MedicationList = ({
   
   return (
     <div className="space-y-4">
-      {filteredMeds.map(med => (
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Sort by:</span>
+          <Select
+            value={sortField}
+            onValueChange={(value) => setSortField(value as 'name' | 'dosage' | 'frequency')}
+          >
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="dosage">Dosage</SelectItem>
+              <SelectItem value="frequency">Frequency</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSortDirection}
+            title={sortDirection === 'asc' ? 'Ascending order' : 'Descending order'}
+          >
+            {sortDirection === 'asc' ? (
+              <ArrowUpAZ className="h-4 w-4" />
+            ) : (
+              <ArrowDownAZ className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {sortedMeds.map(med => (
         <Card key={med.id} className="overflow-hidden">
           <CardContent className="p-0">
             <div className="flex items-start p-4">
